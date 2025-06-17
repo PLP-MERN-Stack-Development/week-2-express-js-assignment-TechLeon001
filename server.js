@@ -47,10 +47,41 @@ app.get('/', (req, res) => {
 
 // TODO: Implement the following routes:
 // GET /api/products - Get all products
+app.get('/api/products', (req, res) => {
+  res.json(products);
+});
+
+
 // GET /api/products/:id - Get a specific product
+app.get('/api/products/:id', (req, res) => {
+  const product = products.find(p => p.id === req.params.id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  res.json(product);
+});
 // POST /api/products - Create a new product
+app.post('/api/products', (req, res) => {
+  const { name, description, price, category, inStock } = req.body;
+  const newProduct = { id: uuidv4(), name, description, price, category, inStock };
+  products.push(newProduct);
+  res.status(201).json(newProduct);
+});
 // PUT /api/products/:id - Update a product
+app.put('/api/products/:id', (req, res) => {
+  const productIndex = products.findIndex(p => p.id === req.params.id);
+  if (productIndex === -1) return res.status(404).json({ error: 'Product not found' });
+
+  const { name, description, price, category, inStock } = req.body;
+  const updatedProduct = { id: req.params.id, name, description, price, category, inStock };
+  products[productIndex] = updatedProduct;
+  res.json(updatedProduct);
+});
 // DELETE /api/products/:id - Delete a product
+app.delete('/api/products/:id', (req, res) => {
+  const idx = products.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Product not found' });
+  products.splice(idx, 1);
+  res.status(204).send();
+});
 
 // Example route implementation for GET /api/products
 app.get('/api/products', (req, res) => {
@@ -58,9 +89,29 @@ app.get('/api/products', (req, res) => {
 });
 
 // TODO: Implement custom middleware for:
+
 // - Request logging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // - Authentication
+app.use((req, res, next) => {
+  // Simple token-based authentication
+  const token = req.headers['authorization'];
+  if (token === 'Bearer mysecrettoken') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Forbidden' });
+  }
+});
+
 // - Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
 
 // Start the server
 app.listen(PORT, () => {
